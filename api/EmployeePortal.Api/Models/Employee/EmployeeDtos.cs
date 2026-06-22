@@ -27,6 +27,7 @@ public class EmployeeResponse
     public string DateOfJoining { get; set; } = string.Empty;
     public string EmploymentType { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
+    public string? ProfilePhotoUrl { get; set; }
 }
 
 public class UpdateEmployeeStatusRequest

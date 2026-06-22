@@ -8,12 +8,17 @@ namespace EmployeePortal.Api.Controllers;
 
 [ApiController]
 [Route("api/employees")]
-[Authorize] // all employee endpoints require a valid JWT
+[Authorize]
 public class EmployeesController : ControllerBase
 {
     private readonly IEmployeeService _service;
+    private readonly IBlobService _blob;
 
-    public EmployeesController(IEmployeeService service) => _service = service;
+    public EmployeesController(IEmployeeService service, IBlobService blob)
+    {
+        _service = service;
+        _blob = blob;
+    }
 
     // GET /api/employees?pageNumber=1&pageSize=10&search=&sortBy=&sortOrder=
     [HttpGet]
@@ -44,6 +49,25 @@ public class EmployeesController : ControllerBase
     public async Task<IActionResult> UpdateStatus(int id, [FromBody] UpdateEmployeeStatusRequest request)
     {
         var result = await _service.UpdateStatusAsync(id, request.Status);
+        return StatusCode(result.Status, result);
+    }
+
+    // POST /api/employees/{id}/photo  (multipart/form-data, field: "file")
+    [HttpPost("{id:int}/photo")]
+    public async Task<IActionResult> UploadPhoto(int id, IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest(new { success = false, message = "No file provided" });
+
+        var allowed = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (!allowed.Contains(ext))
+            return BadRequest(new { success = false, message = "Only jpg, png, webp allowed" });
+
+        if (file.Length > 2 * 1024 * 1024)
+            return BadRequest(new { success = false, message = "File must be under 2 MB" });
+
+        var result = await _service.UpdatePhotoAsync(id, file, _blob);
         return StatusCode(result.Status, result);
     }
 }

@@ -12,6 +12,7 @@ public interface IEmployeeService
     Task<ApiResponse<EmployeeResponse>> GetByIdAsync(int id);
     Task<ApiResponse<EmployeeResponse>> CreateOrUpdateAsync(CreateEmployeeRequest request);
     Task<ApiResponse<string>> UpdateStatusAsync(int id, string status);
+    Task<ApiResponse<EmployeeResponse>> UpdatePhotoAsync(int id, IFormFile file, IBlobService blob);
 }
 
 public class EmployeeService : IEmployeeService
@@ -134,6 +135,22 @@ public class EmployeeService : IEmployeeService
         return ApiResponse<string>.Ok("OK", "Employee status updated successfully");
     }
 
+    public async Task<ApiResponse<EmployeeResponse>> UpdatePhotoAsync(int id, IFormFile file, IBlobService blob)
+    {
+        var e = await _db.Employees.FindAsync(id);
+        if (e is null) return ApiResponse<EmployeeResponse>.Fail("Employee not found", 404);
+
+        // Delete old photo from blob if one exists
+        if (!string.IsNullOrEmpty(e.ProfilePhotoUrl))
+            await blob.DeleteAsync(e.ProfilePhotoUrl, "profile-photos");
+
+        e.ProfilePhotoUrl = await blob.UploadAsync(file, "profile-photos");
+        e.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+
+        return ApiResponse<EmployeeResponse>.Ok(ToResponse(e), "Profile photo updated successfully");
+    }
+
     private async Task<string> GenerateEmployeeCodeAsync()
     {
         var count = await _db.Employees.CountAsync();
@@ -150,6 +167,7 @@ public class EmployeeService : IEmployeeService
         Designation = e.Designation,
         DateOfJoining = e.DateOfJoining.ToString("yyyy-MM-dd"),
         EmploymentType = e.EmploymentType,
-        Status = e.Status
+        Status = e.Status,
+        ProfilePhotoUrl = e.ProfilePhotoUrl
     };
 }

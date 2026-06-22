@@ -43,4 +43,8 @@ public class Employee
     // Stored as a BCrypt hash (NOT plaintext like the legacy DB)
     [MaxLength(200)]
     public string Password { get; set; } = string.Empty;
+
+    // Azure Blob Storage URL for profile photo (null = no photo uploaded yet)
+    [MaxLength(500)]
+    public string? ProfilePhotoUrl { get; set; }
 }
