@@ -63,6 +63,7 @@ import AppRoutes from "./routes/AppRoutes";
 //import App from "../../layouts/AppLayout";
 import AppLayout from "./layouts/AppLayout";
 import { AuthProvider } from './context/AuthContext';
+import { ReferenceProvider } from './context/ReferenceContext';
 
 // ReactDOM.createRoot(document.querySelector("#root")!).render(
 //   <React.StrictMode>
@@ -94,8 +95,9 @@ const App: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
     <React.StrictMode>
       <StyledEngineProvider injectFirst>
         <AuthProvider>
-            <AppLayout disableCustomTheme={false}>            
-            </AppLayout>
+          <ReferenceProvider>
+            <AppLayout disableCustomTheme={false} />
+          </ReferenceProvider>
         </AuthProvider>
         {/* <AppLayout disableCustomTheme={false}> */}
           {/* <AppRoutes /> */}

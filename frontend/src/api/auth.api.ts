@@ -38,24 +38,13 @@
 import axios from 'axios'
 import type { LoginRequest, LoginResponse } from '../types/auth.types'
 import type { ApiResponse } from "../types/common/api-response.model";
-
-const API_URL = 'http://localhost:5000/api'
+import { apiClient } from './axios'
 
 export const loginApi = async (
   data: LoginRequest
 ): Promise<ApiResponse<LoginResponse>> => {
   try {
-    const response = await axios.post<ApiResponse<LoginResponse>>(
-      `${API_URL}/auth/login`,
-      data,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-            // 'X-Tenant-Name': 'CITLDT7'
-        }
-      }
-    )
-
+    const response = await apiClient.post<ApiResponse<LoginResponse>>('/auth/login', data)
     return response.data
   } catch (error: any) {
     if (axios.isAxiosError(error) && error.response?.data) {

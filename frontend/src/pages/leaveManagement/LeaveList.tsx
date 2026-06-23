@@ -35,6 +35,7 @@ import {
   updateLeaveStatusService as updateLeaveStatus
 } from "../../services/leaveService"
 import type { ApplyLeaveRequest, LeaveBalanceResponse, ApproveLeaveRequest } from "../../types/leave";
+import { useReference } from "../../context/ReferenceContext";
 import Typography from '@mui/material/Typography';
 import ApplyLeaveForm, {
   type FormFieldValue,
@@ -55,6 +56,7 @@ import dayjs from 'dayjs';
 const INITIAL_PAGE_SIZE = 10;
 
 export default function LeaveList() {
+  const { referenceData } = useReference();
   const { pathname } = useLocation();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -346,16 +348,13 @@ const [leaveBalance, setLeaveBalance] = useState<any[]>([]);
 
     const query = useMemo(() => {
       return {
-        employeeId: editData?.employeeId || 0,
-        mode: 2,
-        pageNumber: paginationModel.page + 1, // backend usually 1-based
+        pageNumber: paginationModel.page + 1,
         pageSize: paginationModel.pageSize,
-        search:
-          filterModel.quickFilterValues?.[0] || "",
+        search: filterModel.quickFilterValues?.[0] || "",
         sortBy: sortModel[0]?.field || "leaveRequestId",
         sortOrder: (sortModel[0]?.sort?.toUpperCase() as "ASC" | "DESC") || "DESC",
       };
-    }, [editData, paginationModel, sortModel, filterModel]);
+    }, [paginationModel, sortModel, filterModel]);
 
     const [formState, setFormState] = React.useState<ApplyLeaveFormState>(() => ({
       values: INITIAL_FORM_VALUES,
@@ -575,10 +574,10 @@ const [leaveBalance, setLeaveBalance] = useState<any[]>([]);
 
         if (!leave.dayType) {
           issues = [...issues, { message: 'Day type is required', path: ['dayType'] }];
-        } else if (!['Full Day', 'Half Day'].includes(leave.dayType)) {
+        } else if (!referenceData.dayTypes.includes(leave.dayType)) {
             issues = [
             ...issues,
-            { message: 'Day type must be "Full Day" or "Half Day"', path: ['dayType'] },
+            { message: `Day type must be one of: ${referenceData.dayTypes.join(', ')}`, path: ['dayType'] },
             ];
         }
         // if (!leave.reason) {
@@ -888,6 +887,7 @@ const formatDate = (dateString: string) => {
   const columns = useMemo<GridColDef[]>(
     () => [
       //{ field: 'employeeId', headerName: 'S.No' },
+      // valueOptions come from referenceData so frontend & backend stay in sync
     //   {
     //     field: 'leaveRequestId',
     //     headerName: 'S.No',
@@ -937,7 +937,7 @@ const formatDate = (dateString: string) => {
         field: 'dayType',
         headerName: 'Day Type',
         type: 'singleSelect',
-        valueOptions: ['Full Day', 'Half Day'],
+        valueOptions: referenceData.dayTypes,
         //width: 160,
         flex: 1,
       },
@@ -951,7 +951,7 @@ const formatDate = (dateString: string) => {
         field: 'status',
         headerName: 'Status',
         type: 'singleSelect',
-        valueOptions: ['Pending', 'Approved', 'Rejected', 'Cancelled'],
+        valueOptions: referenceData.leaveStatuses,
         //width: 160,
         flex: 1,
       },
@@ -1155,7 +1155,7 @@ const formatDate = (dateString: string) => {
         
       },
     ],
-    [handleRowEdit, handleRowDelete, handleRowCancel],
+    [handleRowEdit, handleRowDelete, handleRowCancel, referenceData],
   );
 
   const pageTitle = 'Leave Requests';
@@ -1281,7 +1281,6 @@ const formatDate = (dateString: string) => {
               filterModel={filterModel}
               onFilterModelChange={handleFilterModelChange}
               disableRowSelectionOnClick
-              onRowClick={handleRowClick}
               loading={isLoading}
               initialState={initialState}
               showToolbar

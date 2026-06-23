@@ -20,6 +20,7 @@ import { useNavigate } from 'react-router';
 import dayjs, { Dayjs } from 'dayjs';
 //import type { Employee } from '../../data/employees';
 import type { ApplyLeaveRequest } from "../../types/leave";
+import { useReference } from "../../context/ReferenceContext";
 
 // export interface EmployeeFormState {
 //   values: Partial<Omit<Employee, 'employeeId'>>;
@@ -127,6 +128,7 @@ export default function ApplyLeaveForm(props: ApplyLeaveFormProps) {
     onCancel,
   } = props;
 
+  const { referenceData } = useReference();
   const formValues = formState.values;
   const formErrors = formState.errors;
 
@@ -299,8 +301,9 @@ export default function ApplyLeaveForm(props: ApplyLeaveFormProps) {
                 defaultValue="1"
                 fullWidth
               >
-                <MenuItem value="Full Day">Full Day</MenuItem>
-                <MenuItem value="Half Day">Half Day</MenuItem>
+                {referenceData.dayTypes.map((dt) => (
+                  <MenuItem key={dt} value={dt}>{dt}</MenuItem>
+                ))}
               </Select>
               <FormHelperText>{formErrors.dayType ?? ' '}</FormHelperText>
             </FormControl>

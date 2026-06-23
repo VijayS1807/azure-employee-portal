@@ -1,18 +1,48 @@
 using System.Text;
+using Azure.Identity;
 using EmployeePortal.Api.Auth;
 using EmployeePortal.Api.Data;
 using EmployeePortal.Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Load secrets from Azure Key Vault (production) using Managed Identity.
+// Locally, DefaultAzureCredential falls back to your Azure CLI login (az login).
+var kvUri = builder.Configuration["KeyVault:Uri"];
+if (!string.IsNullOrEmpty(kvUri))
+{
+    builder.Configuration.AddAzureKeyVault(new Uri(kvUri), new DefaultAzureCredential());
+}
+
 // ---- Services (Dependency Injection container) ----
 
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+    options.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true);
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        Description = "Paste your JWT token here (without 'Bearer ' prefix)"
+    });
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 
 // EF Core + SQL Server
 builder.Services.AddDbContext<AppDbContext>(options =>

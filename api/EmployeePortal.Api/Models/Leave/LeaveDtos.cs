@@ -22,15 +22,16 @@ public class LeaveResponse
 {
     public int LeaveRequestId { get; set; }
     public int EmployeeId { get; set; }
-    public string EmployeeName { get; set; } = string.Empty;
+    public string AppliedBy { get; set; } = string.Empty;   // employee full name
     public int LeaveTypeId { get; set; }
     public string LeaveTypeName { get; set; } = string.Empty;
     public string FromDate { get; set; } = string.Empty;
     public string ToDate { get; set; } = string.Empty;
     public string DayType { get; set; } = string.Empty;
-    public decimal TotalDays { get; set; }
+    public decimal AppliedDays { get; set; }
     public string Status { get; set; } = string.Empty;
     public string AppliedDate { get; set; } = string.Empty;
+    public string? ApprovedBy { get; set; }
 }
 
 // Remaining leave balance per type.
@@ -38,7 +39,7 @@ public class LeaveBalanceResponse
 {
     public int LeaveTypeId { get; set; }
     public string LeaveTypeName { get; set; } = string.Empty;
-    public decimal TotalAllowed { get; set; }
-    public decimal Used { get; set; }
-    public decimal Remaining { get; set; }
+    public decimal TotalLeaves { get; set; }
+    public decimal LeavesTaken { get; set; }
+    public decimal RemainingLeaves { get; set; }
 }

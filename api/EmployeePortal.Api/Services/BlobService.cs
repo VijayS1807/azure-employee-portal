@@ -11,16 +11,23 @@ public interface IBlobService
 
 public class BlobService : IBlobService
 {
-    private readonly BlobServiceClient _client;
+    private readonly string? _connectionString;
+    private BlobServiceClient? _client;
 
     public BlobService(IConfiguration config)
     {
-        _client = new BlobServiceClient(config.GetConnectionString("BlobStorage"));
+        _connectionString = config.GetConnectionString("BlobStorage");
     }
+
+    private BlobServiceClient Client =>
+        _client ??= !string.IsNullOrEmpty(_connectionString)
+            ? new BlobServiceClient(_connectionString)
+            : throw new InvalidOperationException(
+                "BlobStorage connection string is not configured. Add it to appsettings or Azure App Service connection strings.");
 
     public async Task<string> UploadAsync(IFormFile file, string containerName)
     {
-        var container = _client.GetBlobContainerClient(containerName);
+        var container = Client.GetBlobContainerClient(containerName);
 
         // Unique file name: guid + original extension (prevents overwrites)
         var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
@@ -38,7 +45,7 @@ public class BlobService : IBlobService
     {
         var uri = new Uri(blobUrl);
         var blobName = Path.GetFileName(uri.LocalPath);
-        var container = _client.GetBlobContainerClient(containerName);
+        var container = Client.GetBlobContainerClient(containerName);
         await container.GetBlobClient(blobName).DeleteIfExistsAsync();
     }
 }

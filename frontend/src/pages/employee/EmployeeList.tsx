@@ -39,6 +39,7 @@ import {
   getEmployeeByIdService as getEmployee,
 } from "../../services/employeeService";
 import type { Employee } from "../../types/employee";
+import { useReference } from "../../context/ReferenceContext";
 import Typography from '@mui/material/Typography';
 //import EmployeeForm from './EmployeeForm';
 import EmployeeForm, {
@@ -53,6 +54,7 @@ import { useAuth } from "../../context/AuthContext";
 const INITIAL_PAGE_SIZE = 10;
 
 export default function EmployeeList() {
+  const { referenceData } = useReference();
   const { token } = useAuth();
 
   const { pathname } = useLocation();
@@ -173,16 +175,13 @@ export default function EmployeeList() {
 
     const query = useMemo(() => {
       return {
-        employeeId: editData?.employeeId || 0,
-        mode: 2,
-        pageNumber: paginationModel.page + 1, // backend usually 1-based
+        pageNumber: paginationModel.page + 1,
         pageSize: paginationModel.pageSize,
-        search:
-          filterModel.quickFilterValues?.[0] || "",
-        sortBy: sortModel[0]?.field || "leaveRequestId",
+        search: filterModel.quickFilterValues?.[0] || "",
+        sortBy: sortModel[0]?.field || "employeeId",
         sortOrder: (sortModel[0]?.sort?.toUpperCase() as "ASC" | "DESC") || "DESC",
       };
-    }, [editData, paginationModel, sortModel, filterModel]);
+    }, [paginationModel, sortModel, filterModel]);
 
     const [formState, setFormState] = React.useState<EmployeeFormState>(() => ({
       values: INITIAL_FORM_VALUES,
@@ -581,7 +580,7 @@ export default function EmployeeList() {
       },
        { field: 'designation', headerName: 'Designation', type: 'singleSelect',  //width: 160,
         flex: 1 },
-      { field: 'status', headerName: 'Status', type: 'singleSelect', valueOptions: ['Active', 'On Hold', 'Resigned'], flex: 1 },
+      { field: 'status', headerName: 'Status', type: 'singleSelect', valueOptions: referenceData.employeeStatuses, flex: 1 },
       {
         field: 'actions',
         type: 'actions',
@@ -621,7 +620,7 @@ export default function EmployeeList() {
         ],
       },
     ],
-    [handleRowEdit, handleRowDelete],
+    [handleRowEdit, handleRowDelete, referenceData],
   );
 
   const pageTitle = 'Employees';

@@ -84,10 +84,10 @@ const SignInContainer = styled(Stack)(({ theme }) => ({
 }));
 
 export default function Login(props: { disableCustomTheme?: boolean }) {
-   // ✅ CALL HOOK HERE (top level)
   const { login } = useAuth();
   const { token, roleId } = useAuth();
-  
+  const navigate = useNavigate();
+
   const [emailError, setEmailError] = React.useState(false);
   const [emailErrorMessage, setEmailErrorMessage] = React.useState('');
   const [passwordError, setPasswordError] = React.useState(false);
@@ -102,20 +102,15 @@ export default function Login(props: { disableCustomTheme?: boolean }) {
     setOpen(false);
   };
 
-React.useEffect(() => {
-  if (!token) {
-        navigate("/login", { replace: true });
-        return;
-  }
-
-  const role = Number(roleId);
-
-  if (role === 1) {
-    navigate("/employee", { replace: true });
-  } else if (role === 2) {
-    navigate("/leaves/apply", { replace: true });
-  }
-}, [token, roleId]);
+  React.useEffect(() => {
+    if (!token) return;
+    const role = Number(roleId);
+    if (role === 1) {
+      navigate("/employee", { replace: true });
+    } else if (role === 2) {
+      navigate("/leaves/apply", { replace: true });
+    }
+  }, [token, roleId, navigate]);
 
   const [loading, setLoading] = React.useState(false)
   const [snackbar, setSnackbar] = React.useState({
@@ -124,7 +119,6 @@ React.useEffect(() => {
     severity: 'success' as 'success' | 'error',
     anchorOrigin: { vertical: 'top', horizontal: 'right' }
   })
-  const navigate = useNavigate();
   const [formValues, setFormValues] = React.useState({
     username: '',
     password: ''
@@ -176,16 +170,6 @@ React.useEffect(() => {
   //         setLoading(false)
   //   //////
   // };
-const [redirect, setRedirect] = React.useState(false);
-React.useEffect(() => {
-  if (redirect) {
-    const timer = setTimeout(() => {
-      navigate("/employee", { replace: true });
-    }, 1200);
-
-    return () => clearTimeout(timer);
-  }
-}, [redirect, navigate]);
 const notifications = useNotifications();
 
 const handleSubmit = async (
@@ -259,62 +243,22 @@ event: React.FormEvent<HTMLFormElement>
     // }
 
 
-    ////////////////////////////////////////
-    //const { login } = useAuth();
-
       const response = await loginService(payload);
-      console.log("Login response:", response); 
 
       if (response.success) {
-
-        // 1️⃣ Persist
         storage.setAuth(response.data?.token || "", response?.data! || {});
-
-        // 2️⃣ Update React state (VERY IMPORTANT)
         login(response.data?.token || "", response?.data! || {});
-
         notifications.show("Logged in successfully.", {
           severity: "success",
           autoHideDuration: 3000,
         });
-
-        // 3️⃣ Use role directly from response (NOT storage)
-        const role = Number(response.data?.roleId);
-
-        if (role === 1) {
-          // setTimeout(() => {
-          //   navigate("/employee", { replace: true });
-          // }, 1000);
-
-          //navigate("/employee", { replace: true });
-        // } else {
-        //   navigate("/leaves/apply", { replace: true });
-        // }
-        //         } 
-        } else if(role === 2) {
-          console.warn("Employee role detected, navigating to leave application page");
-          // setTimeout(() => {
-          //   navigate("/leaves/apply", { replace: true });
-          // }, 1000);
-
-          navigate("/leaves/apply", { replace: true });
-        } else {
-          console.warn("Unknown role, cannot navigate:", role);
-          notifications.show("Unknown user role. Please contact support.", {
-            severity: "warning",
-            autoHideDuration: 3000,
-          });
-        }
-
+        // navigation is handled by the auth useEffect (token/roleId change)
       } else {
         notifications.show(response.message || "Login failed", {
           severity: "error",
           autoHideDuration: 3000,
         });
-
-         //navigate("/leaves/apply", { replace: true });
       }
-    //////////////////
 
   } catch (error: any) {
     console.error("Login error:", error);

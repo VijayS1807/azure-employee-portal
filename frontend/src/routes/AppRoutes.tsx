@@ -116,8 +116,13 @@ const AppRoutes = () => {
               </>
             )}
 
-            {/* Redirect unknown paths */}
-            <Route path="*" element={<Navigate to="/dashboard" />} />
+            {/* Redirect unknown paths to the role's home */}
+            <Route
+              path="*"
+              element={
+                <Navigate to={role === "Admin" ? "/employee" : "/leaves/apply"} replace />
+              }
+            />
           </Route>
         ) : (
           <Route path="*" element={<Navigate to="/login" />} />

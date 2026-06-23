@@ -1,4 +1,5 @@
-using EmployeePortal.Api.Entities;
+﻿using EmployeePortal.Api.Entities;
+using EmployeePortal.Api.Models.Common;
 using Microsoft.EntityFrameworkCore;
 
 namespace EmployeePortal.Api.Data;
@@ -21,7 +22,7 @@ public static class DbSeeder
                 Department = "IT",
                 Designation = "Admin",
                 DateOfJoining = new DateTime(2023, 1, 1),
-                EmploymentType = "Full-Time",
+                EmploymentType = ReferenceData.EmploymentType.Permanent,
                 Status = "Active",
                 RoleId = 1, // Admin
                 Password = BCrypt.Net.BCrypt.HashPassword("Temp@123"),
@@ -35,7 +36,7 @@ public static class DbSeeder
                 Department = "Development",
                 Designation = "Developer",
                 DateOfJoining = new DateTime(2023, 6, 1),
-                EmploymentType = "Full-Time",
+                EmploymentType = ReferenceData.EmploymentType.Permanent,
                 Status = "Active",
                 RoleId = 2, // Employee
                 Password = BCrypt.Net.BCrypt.HashPassword("Temp@123"),
@@ -58,3 +59,4 @@ public static class DbSeeder
         await db.SaveChangesAsync();
     }
 }
+

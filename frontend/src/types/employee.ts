@@ -8,6 +8,7 @@ export interface Employee {
   dateOfJoining: string;
   employmentType: "Permanent" | "Contract";
   status: "Active" | "On Hold" | "Resigned";
+  profilePhotoUrl?: string;
 }
 
 export interface LeaveBalance {

@@ -9,6 +9,7 @@ import OutlinedInput from "@mui/material/OutlinedInput";
 import InputLabel from "@mui/material/InputLabel";
 import Select, { SelectChangeEvent, SelectProps } from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
+import { useReference } from "../context/ReferenceContext";
 
 interface LeaveActionProps {
   open: boolean;
@@ -16,6 +17,7 @@ interface LeaveActionProps {
 }
 
 export default function LeaveAction({ open, handleClose }: LeaveActionProps) {
+  const { referenceData } = useReference();
   return (
     <Dialog
       open={open}
@@ -63,9 +65,9 @@ export default function LeaveAction({ open, handleClose }: LeaveActionProps) {
           label="Status"
           fullWidth
         >
-          <MenuItem value="Approved">Approved</MenuItem>
-          <MenuItem value="Rejected">Rejected</MenuItem>
-          <MenuItem value="Cancelled">Cancelled</MenuItem>
+          {referenceData.leaveStatuses
+            .filter(s => s !== "Pending")
+            .map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}
         </Select>
       </DialogContent>
       <DialogActions sx={{ pb: 3, px: 3 }}>

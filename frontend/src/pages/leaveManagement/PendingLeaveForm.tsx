@@ -21,6 +21,7 @@ import { useNavigate } from 'react-router';
 import dayjs, { Dayjs } from 'dayjs';
 //import type { Employee } from '../../data/employees';
 import type { ApplyLeaveRequest } from "../../types/leave";
+import { useReference } from "../../context/ReferenceContext";
 
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
@@ -130,6 +131,7 @@ export default function ApproveLeaveForm(props: ApproveLeaveFormProps) {
     open,
   } = props;
 
+  const { referenceData } = useReference();
   const formValues = formState.values;
   const formErrors = formState.errors;
 
@@ -404,17 +406,13 @@ export default function ApproveLeaveForm(props: ApproveLeaveFormProps) {
                 } */}
 
                  {role === "Admin" &&
-                    [
-                      <MenuItem key="Approved" value="Approved">Approved</MenuItem>,
-                      <MenuItem key="Rejected" value="Rejected">Rejected</MenuItem>,
-                      <MenuItem key="Cancelled" value="Cancelled">Cancelled</MenuItem>,
-                    ]
+                    referenceData.leaveStatuses
+                      .filter(s => s !== "Pending")
+                      .map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)
                   }
 
                   {role === "Employee" &&
-                    [
-                      <MenuItem key="Cancelled" value="Cancelled">Cancelled</MenuItem>
-                    ]
+                    <MenuItem key="Cancelled" value="Cancelled">Cancelled</MenuItem>
                   }
 
                 </Select>

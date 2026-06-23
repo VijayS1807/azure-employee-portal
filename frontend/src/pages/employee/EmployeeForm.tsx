@@ -20,6 +20,7 @@ import { useNavigate } from 'react-router';
 import dayjs, { Dayjs } from 'dayjs';
 //import type { Employee } from '../../data/employees';
 import type { Employee } from "../../types/employee";
+import { useReference } from "../../context/ReferenceContext";
 
 // export interface EmployeeFormState {
 //   values: Partial<Omit<Employee, 'employeeId'>>;
@@ -127,6 +128,7 @@ export default function EmployeeForm(props: EmployeeFormProps) {
     onCancel,
   } = props;
 
+  const { referenceData } = useReference();
   const formValues = formState.values;
   const formErrors = formState.errors;
 
@@ -330,8 +332,9 @@ export default function EmployeeForm(props: EmployeeFormProps) {
                 defaultValue="Permanent"
                 fullWidth
               >
-                <MenuItem value="Permanent">Permanent</MenuItem>
-                <MenuItem value="Contract">Contract</MenuItem>
+                {referenceData.employmentTypes.map((t) => (
+                  <MenuItem key={t} value={t}>{t}</MenuItem>
+                ))}
               </Select>
               <FormHelperText>{formErrors.employmentType ?? ' '}</FormHelperText>
             </FormControl>
@@ -348,9 +351,9 @@ export default function EmployeeForm(props: EmployeeFormProps) {
                 defaultValue="Active"
                 fullWidth
               >
-                <MenuItem value="Active">Active</MenuItem>
-                <MenuItem value="On Hold">On Hold</MenuItem>
-                <MenuItem value="Resigned">Resigned</MenuItem>  
+                {referenceData.employeeStatuses.map((s) => (
+                  <MenuItem key={s} value={s}>{s}</MenuItem>
+                ))}
               </Select>
               <FormHelperText>{formErrors.status ?? ' '}</FormHelperText>
             </FormControl>

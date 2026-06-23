@@ -37,6 +37,7 @@ updateLeaveStatusService as updateLeaveStatus
 } from "../../services/leaveService"
 //import type { ApplyLeaveRequest } from "../../types/leave";
 import type { ApproveLeaveRequest } from "../../types/leave";
+import { useReference } from "../../context/ReferenceContext";
 import Typography from '@mui/material/Typography';
 import 
 ApproveLeaveForm,
@@ -53,6 +54,7 @@ import LeaveAction from '../../components/LeaveAction';
 const INITIAL_PAGE_SIZE = 10;
 
 export default function PendingLeaveList() {
+  const { referenceData } = useReference();
   const { pathname } = useLocation();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -164,18 +166,14 @@ export default function PendingLeaveList() {
 
     const query = useMemo(() => {
       return {
-        //employeeId: editData?.approvedBy || 0,
-        employeeId: 0,
-        mode: 2,
-        pageNumber: paginationModel.page + 1, // backend usually 1-based
+        pageNumber: paginationModel.page + 1,
         pageSize: paginationModel.pageSize,
-        search:
-          filterModel.quickFilterValues?.[0] || "",
+        search: filterModel.quickFilterValues?.[0] || "",
         sortBy: sortModel[0]?.field || "leaveRequestId",
         sortOrder: (sortModel[0]?.sort?.toUpperCase() as "ASC" | "DESC") || "DESC",
         status: "All",
       };
-    }, [editData, paginationModel, sortModel, filterModel]);
+    }, [paginationModel, sortModel, filterModel]);
 
     const [formState, setFormState] = React.useState<ApproveLeaveFormState>(() => ({
       values: INITIAL_FORM_VALUES,
@@ -458,8 +456,8 @@ export default function PendingLeaveList() {
         field: 'dayType',
         headerName: 'Day Type',
         type: 'singleSelect',
-        valueOptions: ['Full Day', 'Half Day'],
-        //width: 160,  
+        valueOptions: referenceData.dayTypes,
+        //width: 160,
           flex: 1,
       },
       {
@@ -472,7 +470,7 @@ export default function PendingLeaveList() {
         field: 'status',
         headerName: 'Status',
         type: 'singleSelect',
-        valueOptions: ['Pending', 'Approved', 'Rejected', 'Cancelled'],
+        valueOptions: referenceData.leaveStatuses,
         //width: 160,
           flex: 1,
       },
@@ -553,8 +551,7 @@ export default function PendingLeaveList() {
 
       },
     ],
-    //[handleRowEdit, handleRowDelete],
-    [handleRowEdit],
+    [handleRowEdit, referenceData],
   );
 
   const pageTitle = 'Pending Leave Requests';
@@ -654,7 +651,6 @@ export default function PendingLeaveList() {
             filterModel={filterModel}
             onFilterModelChange={handleFilterModelChange}
             disableRowSelectionOnClick
-            onRowClick={handleRowClick}
             loading={isLoading}
             initialState={initialState}
             showToolbar
