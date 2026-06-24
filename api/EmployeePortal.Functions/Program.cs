@@ -8,11 +8,12 @@ using Microsoft.Extensions.Hosting;
 // Isolated Worker model: Functions run in a separate process from the host.
 var host = new HostBuilder()
     .ConfigureFunctionsWorkerDefaults()
-    .ConfigureFunctionsApplicationInsights()
     .ConfigureServices((context, services) =>
     {
-        var config = context.Configuration;
+        services.AddApplicationInsightsTelemetryWorkerService();
+        services.ConfigureFunctionsApplicationInsights();
 
+        var config = context.Configuration;
         services.AddDbContext<FunctionsDbContext>(options =>
             options.UseSqlServer(config.GetConnectionString("DefaultConnection")));
     })
