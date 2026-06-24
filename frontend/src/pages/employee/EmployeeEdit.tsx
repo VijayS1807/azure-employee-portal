@@ -174,6 +174,8 @@ function EmployeeEditForm({
       onReset={handleFormReset}
       submitButtonLabel="Save"
       backButtonPath={`/employees/${employeeId}`}
+      initialData={initialValues as Employee}
+      onCancel={() => navigate('/employees')}
     />
   );
 }

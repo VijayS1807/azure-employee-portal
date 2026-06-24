@@ -840,7 +840,7 @@ const formatDate = (dateString: string) => {
                   //leaveRequestId  : editData?.leaveRequestId || 0,
                   leaveRequestId: leave?.leaveRequestId || 0,
                   status: "Cancelled",
-                  approvedBy: 'Employee',     // default = 'admin', later from login
+                  approvedBy: '',     // service fills this with the logged-in user's name
               };
               //console.log("Submitting leave data:", leaveDataToSubmit);
               //await createLeave(leaveDataToSubmit);

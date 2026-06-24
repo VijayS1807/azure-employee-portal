@@ -46,7 +46,9 @@ builder.Services.AddSwaggerGen(c =>
 
 // EF Core + SQL Server
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        sql => sql.EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(10), errorNumbersToAdd: null)));
 
 // JWT authentication
 var jwt = builder.Configuration.GetSection("Jwt");
@@ -83,7 +85,12 @@ builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 builder.Services.AddScoped<ILeaveService, LeaveService>();
-builder.Services.AddScoped<IBlobService, BlobService>();
+builder.Services.AddHttpContextAccessor();
+var blobConn = builder.Configuration.GetConnectionString("BlobStorage");
+if (!string.IsNullOrWhiteSpace(blobConn))
+    builder.Services.AddScoped<IBlobService, BlobService>();
+else
+    builder.Services.AddScoped<IBlobService, LocalBlobService>();
 builder.Services.AddSingleton<ILeaveNotificationQueue, LeaveNotificationQueue>();
 
 var app = builder.Build();
@@ -115,6 +122,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors(CorsPolicy);
+app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

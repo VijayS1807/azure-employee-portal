@@ -593,22 +593,24 @@ export default function EmployeeList() {
             icon={<EditIcon />}
             label="Edit"
             //onClick={handleRowEdit(row)}
-            onClick={() => {
-              //console.log("Edit clicked for employee:", row);
-              setShowForm(true);
-              setEditData(row);
+            onClick={async () => {
+              // Fetch fresh data so profilePhotoUrl (and any other server-side
+              // updates) are always current, not stale from the grid cache.
+              const fresh = await getEmployee(row.employeeId);
+              const emp: Employee = fresh ?? row;
+              setEditData(emp);
               setFormValues({
-                // employeeId: row.employeeId,
-                employeeCode: row.employeeCode,
-                fullName: row.fullName,
-                email: row.email,
-                department: row.department,
-                designation: row.designation,
-                dateOfJoining: row.dateOfJoining,
-                employmentType: row.employmentType,
-                status: row.status,
+                employeeCode: emp.employeeCode,
+                fullName: emp.fullName,
+                email: emp.email,
+                department: emp.department,
+                designation: emp.designation,
+                dateOfJoining: emp.dateOfJoining,
+                employmentType: emp.employmentType,
+                status: emp.status,
+                profilePhotoUrl: emp.profilePhotoUrl,
               });
-              
+              setShowForm(true);
             }}
           />,
           // <GridActionsCellItem

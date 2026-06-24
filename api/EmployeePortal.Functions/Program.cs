@@ -29,7 +29,9 @@ var host = new HostBuilder()
 
         var config = context.Configuration;
         services.AddDbContext<FunctionsDbContext>(options =>
-            options.UseSqlServer(config.GetConnectionString("DefaultConnection")));
+            options.UseSqlServer(
+                config.GetConnectionString("DefaultConnection"),
+                sql => sql.EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(10), errorNumbersToAdd: null)));
     })
     .Build();
 

@@ -25,8 +25,11 @@ export const updateEmployeeStatus = async (employeeId: number, status: string) =
 export const uploadEmployeePhoto = async (employeeId: number, file: File) => {
   const formData = new FormData();
   formData.append("file", file);
+  // The apiClient default is Content-Type: application/json.
+  // Setting it to null here deletes it for this request so the browser
+  // automatically adds multipart/form-data with the correct boundary.
   const response = await apiClient.post(`/employees/${employeeId}/photo`, formData, {
-    headers: { "Content-Type": "multipart/form-data" },
+    headers: { "Content-Type": null },
   });
   return response.data;
 };

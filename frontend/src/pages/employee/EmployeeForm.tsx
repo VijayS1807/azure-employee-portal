@@ -54,8 +54,8 @@ export interface EmployeeFormProps {
   submitButtonLabel: string;
   backButtonPath?: string;
   initialData?: Employee;
-  onSave: (data: Employee) => void;
-  onCancel: () => void;
+  onSave?: (data: Employee) => void;
+  onCancel?: () => void;
 }
  
 // export type ValidationResult = { issues: { message: string; path: (keyof Employee)[] }[] };
@@ -141,22 +141,32 @@ export default function EmployeeForm(props: EmployeeFormProps) {
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = React.useState(false);
+  const [localPreviewUrl, setLocalPreviewUrl] = React.useState<string | null>(null);
   const photoInputRef = React.useRef<HTMLInputElement>(null);
 
   const handlePhotoChange = React.useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (!file || !initialData?.employeeId) return;
+
+      // Show local preview immediately before upload
+      const objectUrl = URL.createObjectURL(file);
+      setLocalPreviewUrl(objectUrl);
+
       setIsUploadingPhoto(true);
       try {
         const result = await uploadEmployeePhoto(initialData.employeeId, file);
         const newUrl = result?.data?.profilePhotoUrl;
         if (newUrl) onFieldChange('profilePhotoUrl', newUrl);
+        setLocalPreviewUrl(null); // clear so Avatar falls back to the real blob URL
         notifications.show("Photo uploaded.", { severity: "success", autoHideDuration: 3000 });
-      } catch {
-        notifications.show("Photo upload failed.", { severity: "error", autoHideDuration: 3000 });
+      } catch (err: any) {
+        setLocalPreviewUrl(null);
+        const msg = err?.response?.data?.message ?? err?.message ?? "Unknown error";
+        notifications.show(`Photo upload failed: ${msg}`, { severity: "error", autoHideDuration: 6000 });
       } finally {
         setIsUploadingPhoto(false);
+        URL.revokeObjectURL(objectUrl);
         e.target.value = '';
       }
     },
@@ -387,8 +397,8 @@ export default function EmployeeForm(props: EmployeeFormProps) {
           </Grid>
           {initialData?.employeeId ? (
             <Grid size={{ xs: 12 }} sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 1 }}>
-              {formValues.profilePhotoUrl
-                ? <Avatar src={formValues.profilePhotoUrl} sx={{ width: 64, height: 64 }} />
+              {(localPreviewUrl || formValues.profilePhotoUrl)
+                ? <Avatar src={localPreviewUrl ?? formValues.profilePhotoUrl!} sx={{ width: 64, height: 64 }} />
                 : <Avatar sx={{ width: 64, height: 64 }}>{(formValues.fullName ?? '?')[0]?.toUpperCase()}</Avatar>
               }
               <Stack spacing={0.5}>

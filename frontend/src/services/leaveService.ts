@@ -81,5 +81,6 @@ export const updateLeaveStatusService = async (
   const employeeId = getEmployeeId();
   if (!employeeId) throw new Error('No employee ID found in storage');
 
-  return updateLeaveStatus(data.leaveRequestId, data.status, data.approvedBy || String(employeeId));
+  const currentUserName = storage.getData()?.fullName ?? String(employeeId);
+  return updateLeaveStatus(data.leaveRequestId, data.status, data.approvedBy || currentUserName);
 }
