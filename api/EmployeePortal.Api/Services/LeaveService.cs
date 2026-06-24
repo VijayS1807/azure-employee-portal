@@ -10,11 +10,10 @@ namespace EmployeePortal.Api.Services;
 public interface ILeaveService
 {
     Task<ApiResponse<LeaveResponse>> ApplyAsync(ApplyLeaveRequest request);
+    Task<ApiResponse<LeaveResponse>> GetByIdAsync(int id);
+    Task<ApiResponse<LeaveResponse>> UpdateLeaveAsync(int id, ApplyLeaveRequest request);
     Task<ApiResponse<PaginatedResponse<LeaveResponse>>> GetAllAsync(PaginationRequest pagination, string status);
     Task<ApiResponse<PaginatedResponse<LeaveResponse>>> GetByEmployeePagedAsync(int employeeId, PaginationRequest pagination);
-    Task<ApiResponse<List<LeaveResponse>>> GetByEmployeeAsync(int employeeId);
-    Task<ApiResponse<List<LeaveResponse>>> GetPendingAsync();
-    Task<ApiResponse<string>> ActionAsync(int leaveRequestId, LeaveActionRequest request);
     Task<ApiResponse<string>> UpdateStatusAsync(int leaveRequestId, LeaveActionRequest request);
     Task<ApiResponse<List<LeaveBalanceResponse>>> GetBalanceAsync(int employeeId);
 }
@@ -71,60 +70,58 @@ public class LeaveService : ILeaveService
             "Leave applied successfully", 201);
     }
 
-    public async Task<ApiResponse<List<LeaveResponse>>> GetByEmployeeAsync(int employeeId)
+    public async Task<ApiResponse<LeaveResponse>> GetByIdAsync(int id)
     {
-        var rows = await BuildQuery(_db.LeaveRequests.Where(l => l.EmployeeId == employeeId));
-        return ApiResponse<List<LeaveResponse>>.Ok(rows, "Leaves fetched successfully");
+        var result = await (
+            from l in _db.LeaveRequests.Where(x => x.LeaveRequestId == id)
+            join e in _db.Employees on l.EmployeeId equals e.EmployeeId
+            join t in _db.LeaveTypes on l.LeaveTypeId equals t.LeaveTypeId
+            select new { l, empName = e.FullName, typeName = t.LeaveName }
+        ).FirstOrDefaultAsync();
+
+        return result is null
+            ? ApiResponse<LeaveResponse>.Fail("Leave request not found", 404)
+            : ApiResponse<LeaveResponse>.Ok(ToResponse(result.l, result.empName, result.typeName));
     }
 
-    public async Task<ApiResponse<List<LeaveResponse>>> GetPendingAsync()
+    public async Task<ApiResponse<LeaveResponse>> UpdateLeaveAsync(int id, ApplyLeaveRequest r)
     {
-        var rows = await BuildQuery(_db.LeaveRequests.Where(l => l.Status == "Pending"));
-        return ApiResponse<List<LeaveResponse>>.Ok(rows, "Pending leaves fetched successfully");
-    }
+        var leave = await _db.LeaveRequests.FindAsync(id);
+        if (leave is null) return ApiResponse<LeaveResponse>.Fail("Leave request not found", 404);
 
-    public async Task<ApiResponse<string>> ActionAsync(int leaveRequestId, LeaveActionRequest r)
-    {
-        var leave = await _db.LeaveRequests.FindAsync(leaveRequestId);
-        if (leave is null) return ApiResponse<string>.Fail("Leave request not found", 404);
+        if (leave.Status != Rd.LeaveStatus.Pending)
+            return ApiResponse<LeaveResponse>.Fail(
+                $"Only Pending leaves can be edited. Current status: {leave.Status}", 400);
 
-        if (r.Status != "Approved" && r.Status != "Rejected")
-            return ApiResponse<string>.Fail("Status must be Approved or Rejected", 400);
+        if (!DateTime.TryParse(r.FromDate, out var from) || !DateTime.TryParse(r.ToDate, out var to))
+            return ApiResponse<LeaveResponse>.Fail("Invalid dates", 400);
 
-        leave.Status = r.Status;
-        leave.ApprovedBy = r.ApprovedBy;
-        leave.ApprovedDate = DateTime.UtcNow;
+        if (to < from)
+            return ApiResponse<LeaveResponse>.Fail("ToDate cannot be before FromDate", 400);
 
-        // On approval, decrement the employee's balance for that leave type.
-        if (r.Status == "Approved")
-        {
-            var bal = await _db.EmployeeLeaveBalances.FirstOrDefaultAsync(b =>
-                b.EmployeeId == leave.EmployeeId &&
-                b.LeaveTypeId == leave.LeaveTypeId &&
-                b.Year == leave.FromDate.Year);
+        if (!Rd.DayType.All.Contains(r.DayType, StringComparer.OrdinalIgnoreCase))
+            return ApiResponse<LeaveResponse>.Fail(
+                $"DayType must be one of: {string.Join(", ", Rd.DayType.All)}", 400);
 
-            if (bal is not null)
-            {
-                bal.Used += leave.TotalDays;
-                bal.Remaining = bal.TotalAllowed - bal.Used;
-            }
-        }
+        var leaveType = await _db.LeaveTypes.FindAsync(r.LeaveTypeId);
+        if (leaveType is null) return ApiResponse<LeaveResponse>.Fail("Invalid leave type", 400);
+
+        var employee = await _db.Employees.FindAsync(leave.EmployeeId);
+
+        var days = (decimal)((to - from).Days + 1);
+        if (r.DayType.Equals(Rd.DayType.HalfDay, StringComparison.OrdinalIgnoreCase)) days = 0.5m;
+
+        leave.LeaveTypeId = r.LeaveTypeId;
+        leave.FromDate = from;
+        leave.ToDate = to;
+        leave.DayType = r.DayType;
+        leave.TotalDays = days;
 
         await _db.SaveChangesAsync();
 
-        // Notify the employee asynchronously via the leave-notifications queue.
-        var emp = await _db.Employees.FindAsync(leave.EmployeeId);
-        var lt = await _db.LeaveTypes.FindAsync(leave.LeaveTypeId);
-        if (emp is not null && lt is not null)
-        {
-            await _queue.EnqueueAsync(new LeaveNotificationMessage(
-                leave.LeaveRequestId, emp.EmployeeId, emp.FullName, emp.Email,
-                lt.LeaveName, leave.Status,
-                leave.FromDate.ToString("yyyy-MM-dd"), leave.ToDate.ToString("yyyy-MM-dd"),
-                leave.TotalDays));
-        }
-
-        return ApiResponse<string>.Ok("OK", $"Leave {r.Status.ToLower()} successfully");
+        return ApiResponse<LeaveResponse>.Ok(
+            ToResponse(leave, employee!.FullName, leaveType.LeaveName),
+            "Leave updated successfully");
     }
 
     public async Task<ApiResponse<List<LeaveBalanceResponse>>> GetBalanceAsync(int employeeId)

@@ -221,10 +221,10 @@ const [leaveBalance, setLeaveBalance] = useState<any[]>([]);
           if (!leave.status) {
             issues = [...issues, { message: 'Status is required', path: ['status'] }];
           }
-          else if (!['Pending', 'Approved', 'Rejected', 'Cancelled'].includes(leave.status)) {
+          else if (!referenceData.leaveStatuses.includes(leave.status)) {
               issues = [
               ...issues,
-              { message: 'Status must be "Pending", "Approved", "Rejected" or "Cancelled"', path: ['status'] },
+              { message: `Status must be one of: ${referenceData.leaveStatuses.join(', ')}`, path: ['status'] },
               ];
           }
           return { issues };
@@ -363,7 +363,7 @@ const [leaveBalance, setLeaveBalance] = useState<any[]>([]);
     const formValues = formState.values;
     const formErrors = formState.errors;
     const handleSave = async (data: ApplyLeaveRequest) => {
-      if (data.employeeId === 0) {
+      if (!data.leaveRequestId) {
         await createLeave(data);
       } else {
         await updateLeave(data);
@@ -669,18 +669,18 @@ const [leaveBalance, setLeaveBalance] = useState<any[]>([]);
                 approvedBy: formValues.approvedBy,     // default = 'admin', later from login
             };
             console.log("Submitting leave data:", leaveDataToSubmit);
-            const response = await createLeave(leaveDataToSubmit);
-            console.log("Response from createLeave service in LeaveList:", response);
+            const isEdit = !!editData?.leaveRequestId;
+            const response = isEdit
+              ? await updateLeave(leaveDataToSubmit)
+              : await createLeave(leaveDataToSubmit);
             if (!response.success) {
-              console.error("Leave creation failed:", response);
-              notifications.show('Leave creation failed.', {
+              notifications.show(isEdit ? 'Leave update failed.' : 'Leave creation failed.', {
                 severity: 'error',
                 autoHideDuration: 3000,
               });
-              throw new Error(response.message || 'Failed to create leave');
+              throw new Error(response.message || (isEdit ? 'Failed to update leave' : 'Failed to create leave'));
             } else {
-              console.error("Leave creation successful:", response);
-              notifications.show('Leave created successfully.', {
+              notifications.show(isEdit ? 'Leave updated successfully.' : 'Leave created successfully.', {
                 severity: 'success',
                 autoHideDuration: 3000,
               });
@@ -696,7 +696,7 @@ const [leaveBalance, setLeaveBalance] = useState<any[]>([]);
             );
 
             notifications.show(
-              error?.response?.data?.message || 'Failed to create leave.',
+              error?.response?.data?.message || 'Failed to save leave.',
               {
                 severity: 'error',
                 autoHideDuration: 3000,

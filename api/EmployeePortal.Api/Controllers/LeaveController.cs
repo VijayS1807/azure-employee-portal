@@ -39,19 +39,19 @@ public class LeaveController : ControllerBase
         return StatusCode(result.Status, result);
     }
 
-    // GET /api/leave/pending
-    [HttpGet("pending")]
-    public async Task<IActionResult> GetPending()
+    // GET /api/leave/{id}
+    [HttpGet("{id:int}")]
+    public async Task<IActionResult> GetById(int id)
     {
-        var result = await _service.GetPendingAsync();
+        var result = await _service.GetByIdAsync(id);
         return StatusCode(result.Status, result);
     }
 
-    // PUT /api/leave/{id}/action  (approve / reject — original endpoint)
-    [HttpPut("{id:int}/action")]
-    public async Task<IActionResult> Action(int id, [FromBody] LeaveActionRequest request)
+    // PUT /api/leave/{id}  (edit a Pending leave — dates, day type, leave type)
+    [HttpPut("{id:int}")]
+    public async Task<IActionResult> Update(int id, [FromBody] ApplyLeaveRequest request)
     {
-        var result = await _service.ActionAsync(id, request);
+        var result = await _service.UpdateLeaveAsync(id, request);
         return StatusCode(result.Status, result);
     }
 

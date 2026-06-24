@@ -1,4 +1,5 @@
 import * as React from 'react';
+import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Checkbox from '@mui/material/Checkbox';
@@ -12,15 +13,18 @@ import MenuItem from '@mui/material/MenuItem';
 import Select, { SelectChangeEvent, SelectProps } from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import { useNavigate } from 'react-router';
 import dayjs, { Dayjs } from 'dayjs';
-//import type { Employee } from '../../data/employees';
 import type { Employee } from "../../types/employee";
 import { useReference } from "../../context/ReferenceContext";
+import { uploadEmployeePhoto } from "../../api/employee.api";
+import useNotifications from "../../hooks/useNotifications/useNotifications";
 
 // export interface EmployeeFormState {
 //   values: Partial<Omit<Employee, 'employeeId'>>;
@@ -129,12 +133,35 @@ export default function EmployeeForm(props: EmployeeFormProps) {
   } = props;
 
   const { referenceData } = useReference();
+  const notifications = useNotifications();
   const formValues = formState.values;
   const formErrors = formState.errors;
 
   const navigate = useNavigate();
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [isUploadingPhoto, setIsUploadingPhoto] = React.useState(false);
+  const photoInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handlePhotoChange = React.useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file || !initialData?.employeeId) return;
+      setIsUploadingPhoto(true);
+      try {
+        const result = await uploadEmployeePhoto(initialData.employeeId, file);
+        const newUrl = result?.data?.profilePhotoUrl;
+        if (newUrl) onFieldChange('profilePhotoUrl', newUrl);
+        notifications.show("Photo uploaded.", { severity: "success", autoHideDuration: 3000 });
+      } catch {
+        notifications.show("Photo upload failed.", { severity: "error", autoHideDuration: 3000 });
+      } finally {
+        setIsUploadingPhoto(false);
+        e.target.value = '';
+      }
+    },
+    [initialData?.employeeId, onFieldChange, notifications],
+  );
 
   const handleSubmit = React.useCallback(
     async (event: React.FormEvent<HTMLFormElement>) => {
@@ -358,6 +385,33 @@ export default function EmployeeForm(props: EmployeeFormProps) {
               <FormHelperText>{formErrors.status ?? ' '}</FormHelperText>
             </FormControl>
           </Grid>
+          {initialData?.employeeId ? (
+            <Grid size={{ xs: 12 }} sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 1 }}>
+              {formValues.profilePhotoUrl
+                ? <Avatar src={formValues.profilePhotoUrl} sx={{ width: 64, height: 64 }} />
+                : <Avatar sx={{ width: 64, height: 64 }}>{(formValues.fullName ?? '?')[0]?.toUpperCase()}</Avatar>
+              }
+              <Stack spacing={0.5}>
+                <Typography variant="body2" color="text.secondary">Profile Photo</Typography>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<PhotoCameraIcon />}
+                  loading={isUploadingPhoto}
+                  onClick={() => photoInputRef.current?.click()}
+                >
+                  {formValues.profilePhotoUrl ? 'Change Photo' : 'Upload Photo'}
+                </Button>
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept=".jpg,.jpeg,.png,.webp"
+                  style={{ display: 'none' }}
+                  onChange={handlePhotoChange}
+                />
+              </Stack>
+            </Grid>
+          ) : null}
           {/* <Grid size={{ xs: 12, sm: 6 }} sx={{ display: 'flex' }}>
             <FormControl>
               <FormControlLabel

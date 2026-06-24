@@ -5,7 +5,6 @@ import type { ApplyLeaveRequest, LeaveBalanceRequest, LeaveBalanceResponse, Leav
 import type { ApiResponse, BaseApiResponse } from "../types/common/api-response.model";
 import type { PaginatedResponse } from "../types/common/pagination";
 import { LeaveBalance } from "../types/employee";
-import { error } from "console";
 import { storage } from "../utils/storage";
 
 const getEmployeeId = (): number => {

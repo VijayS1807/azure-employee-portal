@@ -5,13 +5,13 @@ import {
   RouterProvider,
   createBrowserRouter,
   Navigate,
+  useNavigate,
 } from "react-router-dom";
 import MainLayout from "./MainLayout";
 import Layout from "../components/layout/Layout";
 import EmployeeList from "../pages/employee/EmployeeList";
 import LeaveList from "../pages/leaveManagement/LeaveList";
 import PendingLeaveList from "../pages/leaveManagement/PendingLeaveList";
-import EmployeeShow from "../pages/employee/EmployeeShow";
 import EmployeeCreate from "../pages/employee/EmployeeCreate";
 import EmployeeEdit from "../pages/employee/EmployeeEdit";
 import NotificationsProvider from "../hooks/useNotifications/NotificationsProvider";
@@ -63,6 +63,11 @@ import QueryBuilderList from "../pages/queryBuilder/QueryBuilderList";
 // ]);
 
 ///////
+
+function QueryBuilderRoute() {
+  const navigate = useNavigate();
+  return <QueryBuilderPage formState={{ values: {}, errors: {} }} onCancel={() => navigate(-1)} />;
+}
 
 const getRole = (): "Admin" | "Employee" | null => {
   // const token = localStorage.getItem("auth_token");
@@ -121,7 +126,7 @@ const router = createBrowserRouter([
             },
             {
               path: "queryBuilder",
-              element: <QueryBuilderPage />,
+              element: <QueryBuilderRoute />,
             },
             {
               path: "queryBuilder/list",
@@ -252,7 +257,7 @@ export default function AppLayout(
               },
               {
                 path: "queryBuilder",
-                element: <QueryBuilderPage />,
+                element: <QueryBuilderRoute />,
               },
               {
                 path: "queryBuilder/list",

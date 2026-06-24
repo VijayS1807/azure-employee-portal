@@ -12,7 +12,22 @@ export const createEmployee = async (data: Employee) => {
 };
 
 export const updateEmployee = async (data: Employee) => {
-  const response = await apiClient.put(`/employees/${data.employeeId}`, data);
+  // Backend uses EmployeeId > 0 to detect update; both paths use POST /employees
+  const response = await apiClient.post("/employees", data);
+  return response.data;
+};
+
+export const updateEmployeeStatus = async (employeeId: number, status: string) => {
+  const response = await apiClient.put(`/employees/${employeeId}/status`, { status });
+  return response.data;
+};
+
+export const uploadEmployeePhoto = async (employeeId: number, file: File) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  const response = await apiClient.post(`/employees/${employeeId}/photo`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
   return response.data;
 };
 
