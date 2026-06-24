@@ -11,6 +11,7 @@
 
   <ItemGroup>
     <!-- Isolated Worker host + SDK -->
+    <PackageReference Include="Azure.Extensions.AspNetCore.Configuration.Secrets" Version="1.*" />
     <PackageReference Include="Microsoft.Azure.Functions.Worker" Version="2.*" />
     <PackageReference Include="Microsoft.Azure.Functions.Worker.ApplicationInsights" Version="1.*" />
     <PackageReference Include="Microsoft.ApplicationInsights.WorkerService" Version="2.*" />
