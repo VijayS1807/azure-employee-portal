@@ -84,6 +84,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 builder.Services.AddScoped<ILeaveService, LeaveService>();
 builder.Services.AddScoped<IBlobService, BlobService>();
+builder.Services.AddSingleton<ILeaveNotificationQueue, LeaveNotificationQueue>();
 
 var app = builder.Build();
 

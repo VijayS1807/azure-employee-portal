@@ -22,8 +22,13 @@ public interface ILeaveService
 public class LeaveService : ILeaveService
 {
     private readonly AppDbContext _db;
+    private readonly ILeaveNotificationQueue _queue;
 
-    public LeaveService(AppDbContext db) => _db = db;
+    public LeaveService(AppDbContext db, ILeaveNotificationQueue queue)
+    {
+        _db = db;
+        _queue = queue;
+    }
 
     public async Task<ApiResponse<LeaveResponse>> ApplyAsync(ApplyLeaveRequest r)
     {
@@ -106,6 +111,19 @@ public class LeaveService : ILeaveService
         }
 
         await _db.SaveChangesAsync();
+
+        // Notify the employee asynchronously via the leave-notifications queue.
+        var emp = await _db.Employees.FindAsync(leave.EmployeeId);
+        var lt = await _db.LeaveTypes.FindAsync(leave.LeaveTypeId);
+        if (emp is not null && lt is not null)
+        {
+            await _queue.EnqueueAsync(new LeaveNotificationMessage(
+                leave.LeaveRequestId, emp.EmployeeId, emp.FullName, emp.Email,
+                lt.LeaveName, leave.Status,
+                leave.FromDate.ToString("yyyy-MM-dd"), leave.ToDate.ToString("yyyy-MM-dd"),
+                leave.TotalDays));
+        }
+
         return ApiResponse<string>.Ok("OK", $"Leave {r.Status.ToLower()} successfully");
     }
 
@@ -171,6 +189,19 @@ public class LeaveService : ILeaveService
         }
 
         await _db.SaveChangesAsync();
+
+        // Notify the employee asynchronously via the leave-notifications queue.
+        var emp2 = await _db.Employees.FindAsync(leave.EmployeeId);
+        var lt2 = await _db.LeaveTypes.FindAsync(leave.LeaveTypeId);
+        if (emp2 is not null && lt2 is not null)
+        {
+            await _queue.EnqueueAsync(new LeaveNotificationMessage(
+                leave.LeaveRequestId, emp2.EmployeeId, emp2.FullName, emp2.Email,
+                lt2.LeaveName, leave.Status,
+                leave.FromDate.ToString("yyyy-MM-dd"), leave.ToDate.ToString("yyyy-MM-dd"),
+                leave.TotalDays));
+        }
+
         return ApiResponse<string>.Ok("OK", $"Leave {r.Status.ToLower()} successfully");
     }
 
